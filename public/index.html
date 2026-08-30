@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ヤフオク商品画像 フレーム編集</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&family=Kaisei+Decol:wght@700&family=Kosugi+Maru&family=M+PLUS+Rounded+1c:wght@800&family=Yusei+Magic&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&family=Kaisei+Decol:wght@700&family=Klee+One:wght@400;600&family=Kosugi+Maru&family=M+PLUS+Rounded+1c:wght@800&family=Yomogi&family=Yusei+Magic&family=Zen+Kurenaido&display=swap');
 :root{--bg:#f6f6f8;--card:#fff;--line:#d7d7dd;--accent:#1677ff;--danger:#e54545;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;color:#17171a}
@@ -204,6 +204,10 @@ background-position:0 0,0 12px,12px -12px,-12px 0}
 
     <div class="previewSliders">
       <div class="row"><label>文字フォント</label><select id="fontFamily">
+        <option id="kawaiiFontOption" value='"KawaiiTegaki",sans-serif' disabled>kawaii手書き文字（未登録）</option>
+        <option value='"Yomogi","Noto Sans JP",sans-serif'>よもぎ手書き（おすすめ）</option>
+        <option value='"Klee One","Noto Sans JP",sans-serif'>クレー手書き</option>
+        <option value='"Zen Kurenaido","Noto Sans JP",sans-serif'>やわらか細文字</option>
         <option value='"M PLUS Rounded 1c","Noto Sans JP",sans-serif'>まる文字</option>
         <option value='"Hachi Maru Pop","Noto Sans JP",cursive'>ふんわり手書き</option>
         <option value='"Yusei Magic","Noto Sans JP",sans-serif'>マジック文字</option>
@@ -211,6 +215,11 @@ background-position:0 0,0 12px,12px -12px,-12px 0}
         <option value='"Kaisei Decol","Noto Serif JP",serif'>デコ文字</option>
         <option value='-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif'>標準文字</option>
       </select><b></b></div>
+      <div class="two" style="margin:8px 0 4px">
+        <label class="filebtn" style="min-height:42px">kawaii手書き文字を登録<input id="kawaiiFontFile" type="file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf"></label>
+        <button id="removeKawaiiFontBtn" type="button" style="min-height:42px">登録を解除</button>
+      </div>
+      <div id="kawaiiFontStatus" class="small">公式配布の KTEGAKI.ttf を最初に1回選択してください。</div>
       <div class="row"><label>文字サイズ</label><input id="fontSize" type="range" min="24" max="180" value="72"><b id="fontSizeV">72</b></div>
       <div class="row"><label>縁取り</label><input id="strokeW" type="range" min="0" max="20" value="6"><b id="strokeWV">6</b></div>
     </div>
@@ -416,6 +425,63 @@ frameToggle.addEventListener('change',()=>{
   frameStatus.textContent=frameEnabled?'付ける':'付けない';
   draw();
 });
+
+const KAWAII_FONT_DB='yahoo-frame-user-fonts';
+function openFontDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(KAWAII_FONT_DB,1);
+    req.onupgradeneeded=()=>req.result.createObjectStore('fonts');
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+}
+async function saveKawaiiFont(bytes){
+  const db=await openFontDB();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction('fonts','readwrite');
+    tx.objectStore('fonts').put(bytes,'KTEGAKI');
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+  });
+  db.close();
+}
+async function getKawaiiFont(){
+  const db=await openFontDB();
+  const value=await new Promise((resolve,reject)=>{
+    const req=db.transaction('fonts').objectStore('fonts').get('KTEGAKI');
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+  db.close();return value;
+}
+async function deleteKawaiiFont(){
+  const db=await openFontDB();
+  await new Promise((resolve,reject)=>{
+    const tx=db.transaction('fonts','readwrite');tx.objectStore('fonts').delete('KTEGAKI');
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+  });
+  db.close();
+}
+async function activateKawaiiFont(bytes,selectIt=false){
+  const face=new FontFace('KawaiiTegaki',bytes);
+  await face.load();document.fonts.add(face);
+  kawaiiFontOption.disabled=false;
+  kawaiiFontOption.textContent='kawaii手書き文字';
+  kawaiiFontStatus.textContent='登録済み：この端末でkawaii手書き文字を使用できます。';
+  if(selectIt){fontFamily.value=kawaiiFontOption.value;draw();}
+}
+kawaiiFontFile.addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const bytes=await file.arrayBuffer();
+    await activateKawaiiFont(bytes,true);await saveKawaiiFont(bytes);
+  }catch(err){alert('フォントを登録できませんでした。KTEGAKI.ttfを選択してください。');}
+  e.target.value='';
+});
+removeKawaiiFontBtn.addEventListener('click',async()=>{
+  await deleteKawaiiFont();
+  if(fontFamily.value===kawaiiFontOption.value)fontFamily.selectedIndex=1;
+  kawaiiFontOption.disabled=true;kawaiiFontOption.textContent='kawaii手書き文字（未登録）';
+  kawaiiFontStatus.textContent='登録を解除しました。再利用するときはKTEGAKI.ttfを選択してください。';draw();
+});
+(async()=>{try{const bytes=await getKawaiiFont();if(bytes)await activateKawaiiFont(bytes);}catch(e){}})();
 document.querySelectorAll('.pos').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.pos').forEach(x=>x.classList.remove('selected'));
   b.classList.add('selected'); pos=+b.dataset.p; draw();
@@ -522,7 +588,17 @@ drawTextPreview();
 
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    let refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(refreshing)return;
+      refreshing=true;
+      location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js?v=20260830-3',{updateViaCache:'none'})
+      .then(reg=>{
+        reg.update();
+        setInterval(()=>reg.update(),60*60*1000);
+      }).catch(()=>{});
   });
 }
 
