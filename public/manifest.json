@@ -1,0 +1,24 @@
+{
+  "name": "ヤフオク商品画像 フレーム編集",
+  "short_name": "画像フレーム",
+  "description": "ヤフオク商品画像のフレーム編集アプリ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#f6f6f8",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

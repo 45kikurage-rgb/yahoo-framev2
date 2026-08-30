@@ -594,7 +594,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){
       refreshing=true;
       location.reload();
     });
-    navigator.serviceWorker.register('./sw.js?v=20260830-3',{updateViaCache:'none'})
+    navigator.serviceWorker.register('./sw.js?v=20260830-6',{updateViaCache:'none'})
       .then(reg=>{
         reg.update();
         setInterval(()=>reg.update(),60*60*1000);
