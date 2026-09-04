@@ -1,4 +1,4 @@
-const CACHE_NAME='yahoo-framev2-20260830-3';
+const CACHE_NAME='yahoo-framev2-20260904-chiikawa-1';
 
 self.addEventListener('install',()=>{
   self.skipWaiting();
