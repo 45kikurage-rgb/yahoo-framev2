@@ -9,6 +9,7 @@
 :root{--bg:#fde0b6;--card:#fffaf1;--text:#282018;--sub:#776a5e;--line:#8c7762;--accent:#94714f;--danger:#9a3d31;--btn:#3c3026;--btn-soft:#fff4df;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:"Yomogi","Klee One","Yu Mincho",cursive;color:var(--text)}
+button,input,select,textarea,label,.filebtn{font-family:inherit}
 .wrap{max-width:760px;margin:auto;padding:12px}
 .toolbar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;position:sticky;top:0;z-index:20;background:rgba(253,224,182,.96);padding:8px 0}
 button,.filebtn{border:2px solid rgba(140,119,98,.55);background:#fffaf1;color:var(--text);border-radius:13px;min-height:48px;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;box-shadow:0 3px 0 rgba(60,48,38,.14)}
@@ -141,6 +142,29 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
 .colorChip.selected{outline:3px solid rgba(140,119,98,.18);border-color:var(--btn)}
 .switch input:checked+span{background:var(--btn)}
 .badge{background:#fff4df;color:var(--text);border:1px solid rgba(140,119,98,.42)}
+
+/* Fixed bottom image controls */
+.wrap{padding-bottom:116px!important}
+.bottomToolbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:1000;
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;
+  padding:6px max(6px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));
+  background:rgba(253,224,182,.98);
+  border-top:2px solid rgba(140,119,98,.55);
+}
+.bottomToolbar .bottomTool{
+  min-width:0;height:96px;min-height:96px;padding:4px 2px;
+  border-radius:12px;font-size:clamp(11px,2.7vw,15px);line-height:1.15;
+  white-space:normal;word-break:keep-all;
+}
+.bottomToolbar .filebtn{margin:0}
+.bottomToolbar .frameOn{background:var(--btn);color:#fff;border-color:var(--btn)}
+.bottomToolbar .frameOff{background:#fffaf1;color:var(--text)}
+@media(max-width:390px){
+  .bottomToolbar{gap:2px;padding-left:3px;padding-right:3px}
+  .bottomToolbar .bottomTool{font-size:10px}
+}
+
 </style>
 
 <link rel="manifest" href="manifest.json">
@@ -154,14 +178,7 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
 </head>
 <body>
 <div class="wrap">
-  <div class="toolbar">
-    <label class="filebtn">写真を選ぶ<input id="file" type="file" accept="image/*"></label>
-    <button id="deletePhotoBtn">写真削除</button>
-    <button id="cropBtn">トリミング</button>
-    <button id="saveBtn" class="primary">PNGで保存</button>
-  </div>
-
-  <div class="card">
+<div class="card">
     <div id="canvasWrap" class="canvasWrap">
       <canvas id="cv" width="1536" height="2048"></canvas>
       <div class="cropHint"></div>
@@ -259,14 +276,20 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
     </div>
     <p class="note">右上のプレビューには、実際の商品画像・フレーム・追記文字を縮小して表示します。文字サイズや縁取り、9マスの位置を変えるとリアルタイムで反映されます。</p>
   </div>
-
-  <div class="card">
-    <div class="switchRow">
-      <div><b>フレーム</b><div id="frameStatus" class="small">付ける</div></div>
-      <label class="switch" aria-label="フレームを付ける・付けない"><input id="frameToggle" type="checkbox" checked><span></span></label>
+<label class="switch" aria-label="フレームを付ける・付けない"><input id="frameToggle" type="checkbox" checked><span></span></label>
     </div>
     <p class="note">OFFにすると、写真と文字だけで保存できます。写真や文字の位置設定はそのまま維持されます。</p>
   </div>
+</div>
+
+
+<div class="bottomToolbar" aria-label="画像操作">
+  <label class="bottomTool filebtn">画像選択<input id="file" type="file" accept="image/*"></label>
+  <button id="cropBtn" class="bottomTool" type="button">画像調整</button>
+  <button id="deletePhotoBtn" class="bottomTool" type="button">画像削除</button>
+  <button id="saveBtn" class="bottomTool primary" type="button">画像保存</button>
+  <button id="zoom1Btn" class="bottomTool" type="button">1%拡大</button>
+  <button id="frameBtn" class="bottomTool frameOn" type="button" aria-pressed="true">フレーム</button>
 </div>
 
 <div id="saveToast" class="saveToast saveToastRich" role="status" aria-live="polite">
@@ -299,8 +322,14 @@ document.getElementById('file').addEventListener('change',e=>loadFile(e.target.f
 
 function resetPhoto(){
   if(!photo)return;
-  baseFit=Math.max(cv.width/photo.width, cv.height/photo.height);
-  state={x:cv.width/2,y:cv.height/2,scale:1,rot:0};
+  const fitMargin = 0.94;
+  baseFit=Math.min(innerGuide.w/photo.width, innerGuide.h/photo.height)*fitMargin;
+  state={
+    x:innerGuide.x+innerGuide.w/2,
+    y:innerGuide.y+innerGuide.h/2,
+    scale:1,
+    rot:0
+  };
   syncControls(); draw();
 }
 function syncControls(){
@@ -434,9 +463,11 @@ fontFamily.addEventListener('change',async()=>{
   if(document.fonts){try{await document.fonts.load(`900 ${fontSize.value}px ${fontFamily.value}`);}catch(e){}}
   draw();
 });
-frameToggle.addEventListener('change',()=>{
-  frameEnabled=frameToggle.checked;
-  frameStatus.textContent=frameEnabled?'付ける':'付けない';
+frameBtn.addEventListener('click',()=>{
+  frameEnabled=!frameEnabled;
+  frameBtn.classList.toggle('frameOn',frameEnabled);
+  frameBtn.classList.toggle('frameOff',!frameEnabled);
+  frameBtn.setAttribute('aria-pressed',String(frameEnabled));
   draw();
 });
 
@@ -503,9 +534,15 @@ document.querySelectorAll('.pos').forEach(b=>b.addEventListener('click',()=>{
 
 scale.addEventListener('input',()=>{state.scale=+scale.value/100;scaleV.textContent=scale.value+'%';draw();});
 rot.addEventListener('input',()=>{state.rot=+rot.value;rotV.textContent=rot.value+'°';draw();});
-centerBtn.onclick=()=>{state.x=cv.width/2;state.y=cv.height/2;draw();};
+centerBtn.onclick=()=>{state.x=innerGuide.x+innerGuide.w/2;state.y=innerGuide.y+innerGuide.h/2;draw();};
 rot90.onclick=()=>{state.rot=(state.rot+90)%360;syncControls();draw();};
 resetBtn.onclick=resetPhoto;
+zoom1Btn.onclick=()=>{
+  if(!photo)return;
+  state.scale=Math.min(4,state.scale+0.01);
+  syncControls();
+  draw();
+};
 deletePhotoBtn.onclick=()=>{
   if(!photo) return;
   const ok = confirm('読み込んだ写真を削除しますか？\nフレームと文字は残ります。');
@@ -517,7 +554,7 @@ deletePhotoBtn.onclick=()=>{
   syncControls();
   draw();
 };
-cropBtn.onclick=()=>{wrap.classList.toggle('cropOn');cropBtn.classList.toggle('active'); cropBtn.textContent=wrap.classList.contains('cropOn')?'トリミング表示中':'トリミング';};
+cropBtn.onclick=()=>{wrap.classList.toggle('cropOn');cropBtn.classList.toggle('active'); cropBtn.textContent=wrap.classList.contains('cropOn')?'調整中':'画像調整';};
 
 function pxy(t){
  const r=cv.getBoundingClientRect();
@@ -554,7 +591,7 @@ wrap.addEventListener('pointerup',endPointer);wrap.addEventListener('pointercanc
 saveBtn.onclick=()=>{
   draw();
 
-  const originalText = saveBtn.textContent;
+  const originalText = '画像保存';
   saveBtn.disabled = true;
   saveBtn.textContent = '保存中…';
 

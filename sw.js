@@ -1,4 +1,4 @@
-const CACHE_NAME='yahoo-framev2-20260904-chiikawa-1';
+const CACHE_NAME='yahoo-framev2-20260904-bottom-toolbar-2';
 
 self.addEventListener('install',()=>{
   self.skipWaiting();
