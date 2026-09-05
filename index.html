@@ -188,9 +188,9 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
 .textEditorGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
 .textListBox{margin-top:10px}
 .textListBox .small{margin-bottom:5px;color:var(--text);font-weight:700;font-size:14px}
-.textListControls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+.textListControls{display:block}
 .textList{width:100%;min-width:0;min-height:44px;padding:6px 38px 6px 10px;border:2px solid rgba(140,119,98,.42);border-radius:13px;background:#fffdf8;font:inherit;color:var(--text)}
-#renameTextBtn{min-height:44px;white-space:nowrap;padding:6px 12px}
+.textList.is-active{border-color:#3b3028;background:#fff7e8;box-shadow:0 0 0 2px rgba(59,48,40,.10)}
 .previewPanel .dpad{margin:10px auto 0}
 .previewPanel .dpad button{font-size:22px;white-space:nowrap}
 .previewPanel .dpad .home{font-size:16px;padding-left:4px;padding-right:4px;line-height:1}
@@ -205,13 +205,20 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
 .textSettingsBox .rangeLabel{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
 .textSettingsBox .rangeLabel .rangeMinMax{font-size:12px;color:var(--sub);font-weight:600}
 .textSettingsBox b{text-align:right;min-width:32px}
-.hiddenPositionGrid{display:none!important}
 .textActions{margin-top:10px}
 @media(max-width:520px){
   .textEditorGrid{grid-template-columns:1fr 1fr;gap:10px}
   .textSettingsBox .row{grid-template-columns:100px 1fr 40px;gap:6px}
   .textSettingsBox .rangeLabel{gap:5px}
 }
+
+
+.placementGridTitle{margin:14px 0 8px}
+#posgrid{width:100%;gap:6px}
+#posgrid .pos{background:#fffaf1;border:2px solid rgba(140,119,98,.42);border-radius:12px}
+#posgrid .pos::after{background:#bd986f}
+#posgrid .pos.selected{border-color:#3b3028;background:#fff1d8;box-shadow:0 0 0 2px rgba(59,48,40,.08)}
+#posgrid .pos.selected::after{background:#3b3028}
 
 </style>
 
@@ -258,13 +265,12 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
         <input id="txt" type="text" inputmode="text" autocomplete="off" placeholder="例：500円 / 350ml / 3本セット">
 
         <div class="textListBox">
-          <div class="small">編集/削除したい文字リスト</div>
+          <div class="small">編集/削除する文字リスト</div>
           <div class="textListControls">
             <select id="textList" class="textList" aria-label="編集または削除する文字">
               <option value="">登録した文字を選択</option>
             </select>
-            <button id="renameTextBtn" type="button">名称編集</button>
-          </div>
+</div>
         </div>
 
         <div style="margin-top:10px">
@@ -313,12 +319,13 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
       <div class="row"><label class="rangeLabel"><span>縁取り</span><span class="rangeMinMax">0 ～ 80</span></label><input id="strokeW" type="range" min="0" max="80" value="6"><b id="strokeWV">6</b></div>
     </div>
 
+    <div class="gridTitle placementGridTitle">③ 文字の配置（25マス）</div>
+<div class="posgrid" id="posgrid"><button class="pos" data-p="0" aria-label="文字位置 1"></button><button class="pos" data-p="1" aria-label="文字位置 2"></button><button class="pos" data-p="2" aria-label="文字位置 3"></button><button class="pos" data-p="3" aria-label="文字位置 4"></button><button class="pos" data-p="4" aria-label="文字位置 5"></button><button class="pos" data-p="5" aria-label="文字位置 6"></button><button class="pos" data-p="6" aria-label="文字位置 7"></button><button class="pos" data-p="7" aria-label="文字位置 8"></button><button class="pos" data-p="8" aria-label="文字位置 9"></button><button class="pos" data-p="9" aria-label="文字位置 10"></button><button class="pos" data-p="10" aria-label="文字位置 11"></button><button class="pos" data-p="11" aria-label="文字位置 12"></button><button class="pos selected" data-p="12" aria-label="文字位置 13"></button><button class="pos" data-p="13" aria-label="文字位置 14"></button><button class="pos" data-p="14" aria-label="文字位置 15"></button><button class="pos" data-p="15" aria-label="文字位置 16"></button><button class="pos" data-p="16" aria-label="文字位置 17"></button><button class="pos" data-p="17" aria-label="文字位置 18"></button><button class="pos" data-p="18" aria-label="文字位置 19"></button><button class="pos" data-p="19" aria-label="文字位置 20"></button><button class="pos" data-p="20" aria-label="文字位置 21"></button><button class="pos" data-p="21" aria-label="文字位置 22"></button><button class="pos" data-p="22" aria-label="文字位置 23"></button><button class="pos" data-p="23" aria-label="文字位置 24"></button><button class="pos" data-p="24" aria-label="文字位置 25"></button></div>
+
     <div class="textActions">
       <button id="confirmTextBtn" class="primary">文字を追加・確定</button>
       <button id="deleteTextBtn">選択文字を削除</button>
     </div>
-
-    <div class="posgrid hiddenPositionGrid" id="posgrid"><button class="pos" data-p="0" aria-label="文字位置 1"></button><button class="pos" data-p="1" aria-label="文字位置 2"></button><button class="pos" data-p="2" aria-label="文字位置 3"></button><button class="pos" data-p="3" aria-label="文字位置 4"></button><button class="pos" data-p="4" aria-label="文字位置 5"></button><button class="pos" data-p="5" aria-label="文字位置 6"></button><button class="pos" data-p="6" aria-label="文字位置 7"></button><button class="pos" data-p="7" aria-label="文字位置 8"></button><button class="pos" data-p="8" aria-label="文字位置 9"></button><button class="pos" data-p="9" aria-label="文字位置 10"></button><button class="pos" data-p="10" aria-label="文字位置 11"></button><button class="pos" data-p="11" aria-label="文字位置 12"></button><button class="pos selected" data-p="12" aria-label="文字位置 13"></button><button class="pos" data-p="13" aria-label="文字位置 14"></button><button class="pos" data-p="14" aria-label="文字位置 15"></button><button class="pos" data-p="15" aria-label="文字位置 16"></button><button class="pos" data-p="16" aria-label="文字位置 17"></button><button class="pos" data-p="17" aria-label="文字位置 18"></button><button class="pos" data-p="18" aria-label="文字位置 19"></button><button class="pos" data-p="19" aria-label="文字位置 20"></button><button class="pos" data-p="20" aria-label="文字位置 21"></button><button class="pos" data-p="21" aria-label="文字位置 22"></button><button class="pos" data-p="22" aria-label="文字位置 23"></button><button class="pos" data-p="23" aria-label="文字位置 24"></button><button class="pos" data-p="24" aria-label="文字位置 25"></button></div>
   </div>
 </div>
 
@@ -466,20 +473,11 @@ function renderTextList(){
     textList.appendChild(opt);
   });
   textList.value=selected;
+  textList.classList.toggle('is-active', editingIndex>=0);
 }
 textList.addEventListener('change',()=>{
-  if(textList.value===''){editingIndex=-1;confirmTextBtn.textContent='文字を追加・確定';draw();return;}
+  if(textList.value===''){editingIndex=-1;textList.classList.remove('is-active');confirmTextBtn.textContent='文字を追加・確定';draw();return;}
   editText(+textList.value);
-});
-renameTextBtn.addEventListener('click',()=>{
-  if(textList.value===''){alert('名称を変更する文字をリストから選択してください。');return;}
-  const i=+textList.value,item=textItems[i];
-  const current=item.name || item.text || ('文字'+(i+1));
-  const name=prompt('リストに表示する名称を入力してください。',current);
-  if(name===null)return;
-  const trimmed=name.trim();
-  if(!trimmed){alert('名称を入力してください。');return;}
-  item.name=trimmed;editingIndex=i;renderTextList();draw();
 });
 function editText(i){
   const item=textItems[i];editingIndex=i;txt.value=item.text;txtColor.value=item.col;
