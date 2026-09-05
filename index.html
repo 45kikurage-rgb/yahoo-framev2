@@ -71,6 +71,10 @@ background-size:24px 24px;
 background-position:0 0,0 12px,12px -12px,-12px 0}
 .textEditorGrid textarea{min-height:110px}
 .previewSliders{margin-top:12px}
+#txt{height:44px;min-height:44px;resize:none;white-space:nowrap;overflow-x:auto}
+.fontRow{display:block!important}
+.fontRow label{display:block;margin-bottom:5px}
+.fontRow select{width:100%;max-width:none}
 @media(max-width:520px){
  .textEditorGrid{grid-template-columns:1fr 1fr;gap:10px}
  .textEditorGrid textarea{min-height:110px}
@@ -184,12 +188,17 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
 .textEditorGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
 .textListBox{margin-top:10px}
 .textListBox .small{margin-bottom:5px;color:var(--text);font-weight:700;font-size:14px}
-.textList{display:flex;flex-direction:column;gap:6px;margin-top:0;min-height:54px;padding:8px;border:2px solid rgba(140,119,98,.42);border-radius:13px;background:#fffdf8}
-.textList:empty::before{content:"確定した文字がここに表示されます";color:var(--sub);font-size:12px;align-self:center;margin:auto}
-.textList button{width:100%;min-height:40px;justify-content:flex-start;text-align:left;padding:6px 10px;font-size:14px;border-radius:9px;box-shadow:none}
+.textListControls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+.textList{width:100%;min-width:0;min-height:44px;padding:6px 38px 6px 10px;border:2px solid rgba(140,119,98,.42);border-radius:13px;background:#fffdf8;font:inherit;color:var(--text)}
+#renameTextBtn{min-height:44px;white-space:nowrap;padding:6px 12px}
 .previewPanel .dpad{margin:10px auto 0}
-.previewPanel .dpad button{font-size:22px}
+.previewPanel .dpad button{font-size:22px;white-space:nowrap}
+.previewPanel .dpad .home{font-size:16px;padding-left:4px;padding-right:4px;line-height:1}
 .previewSliders{margin-top:12px}
+#txt{height:44px;min-height:44px;resize:none;white-space:nowrap;overflow-x:auto}
+.fontRow{display:block!important}
+.fontRow label{display:block;margin-bottom:5px}
+.fontRow select{width:100%;max-width:none}
 .textSettingsTitle{margin:14px 0 8px}
 .textSettingsBox{width:100%;border:2px solid rgba(140,119,98,.42);border-radius:15px;padding:10px 12px;background:#fffaf1}
 .textSettingsBox .row{grid-template-columns:115px 1fr 44px;margin:8px 0}
@@ -246,11 +255,16 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
     <div class="textEditorGrid">
       <div class="textControls">
         <div class="small" style="margin-bottom:5px">文字入力</div>
-        <textarea id="txt" placeholder="例：500円 / 350ml / 3本セット"></textarea>
+        <input id="txt" type="text" inputmode="text" autocomplete="off" placeholder="例：500円 / 350ml / 3本セット">
 
         <div class="textListBox">
-          <div class="small">編集/削除したい文字</div>
-          <div id="textList" class="textList"></div>
+          <div class="small">編集/削除したい文字リスト</div>
+          <div class="textListControls">
+            <select id="textList" class="textList" aria-label="編集または削除する文字">
+              <option value="">登録した文字を選択</option>
+            </select>
+            <button id="renameTextBtn" type="button">名称編集</button>
+          </div>
         </div>
 
         <div style="margin-top:10px">
@@ -265,7 +279,7 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
         </div>
 
         <div class="previewSliders">
-          <div class="row"><label>文字フォント</label><select id="fontFamily">
+          <div class="row fontRow"><label>文字フォント</label><select id="fontFamily">
             <option id="kawaiiFontOption" value='"KawaiiTegaki",sans-serif' disabled>kawaii手書き文字（未登録）</option>
             <option value='"Yomogi","Noto Sans JP",sans-serif'>よもぎ手書き（おすすめ）</option>
             <option value='"Klee One","Noto Sans JP",sans-serif'>クレー手書き</option>
@@ -276,12 +290,7 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
             <option value='"Kosugi Maru","Noto Sans JP",sans-serif'>すっきり丸文字</option>
             <option value='"Kaisei Decol","Noto Serif JP",serif'>デコ文字</option>
             <option value='-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif'>標準文字</option>
-          </select><b></b></div>
-          <div class="two" style="margin:8px 0 4px">
-            <label class="filebtn" style="min-height:42px">kawaii手書き文字を登録<input id="kawaiiFontFile" type="file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf"></label>
-            <button id="removeKawaiiFontBtn" type="button" style="min-height:42px">登録を解除</button>
-          </div>
-          <div id="kawaiiFontStatus" class="small">公式配布の KTEGAKI.ttf を最初に1回選択してください。</div>
+          </select></div>
         </div>
       </div>
 
@@ -448,16 +457,30 @@ function paintText(target,item){
   target.restore();
 }
 function renderTextList(){
-  textList.innerHTML='';
+  const selected=editingIndex>=0?String(editingIndex):'';
+  textList.innerHTML='<option value="">登録した文字を選択</option>';
   textItems.forEach((item,i)=>{
-    const b=document.createElement('button');
-    b.type='button';
-    b.textContent=(i===editingIndex?'編集中：':'')+(item.text.replace(/\n/g,' / ')||('文字'+(i+1)));
-    if(i===editingIndex)b.classList.add('active');
-    b.onclick=()=>editText(i);
-    textList.appendChild(b);
+    const opt=document.createElement('option');
+    opt.value=String(i);
+    opt.textContent=item.name || item.text || ('文字'+(i+1));
+    textList.appendChild(opt);
   });
+  textList.value=selected;
 }
+textList.addEventListener('change',()=>{
+  if(textList.value===''){editingIndex=-1;confirmTextBtn.textContent='文字を追加・確定';draw();return;}
+  editText(+textList.value);
+});
+renameTextBtn.addEventListener('click',()=>{
+  if(textList.value===''){alert('名称を変更する文字をリストから選択してください。');return;}
+  const i=+textList.value,item=textItems[i];
+  const current=item.name || item.text || ('文字'+(i+1));
+  const name=prompt('リストに表示する名称を入力してください。',current);
+  if(name===null)return;
+  const trimmed=name.trim();
+  if(!trimmed){alert('名称を入力してください。');return;}
+  item.name=trimmed;editingIndex=i;renderTextList();draw();
+});
 function editText(i){
   const item=textItems[i];editingIndex=i;txt.value=item.text;txtColor.value=item.col;
   strokeColor.value=item.scol;fontSize.value=item.fs;strokeW.value=item.sw;fontFamily.value=item.font||'-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif';pos=item.pos;
@@ -468,12 +491,12 @@ function editText(i){
 }
 confirmTextBtn.onclick=()=>{
   const item=getDraft();if(!item.text){alert('文字を入力してください。');return;}
-  if(editingIndex>=0)textItems[editingIndex]=item;else textItems.push(item);
+  if(editingIndex>=0){item.name=textItems[editingIndex].name||'';textItems[editingIndex]=item;}else{textItems.push({...item,name:item.text});}
   editingIndex=-1;txt.value='';textOffset={x:0,y:0};confirmTextBtn.textContent='文字を追加・確定';
   renderTextList();draw();
 };
 deleteTextBtn.onclick=()=>{
-  if(editingIndex<0){alert('削除する文字を下の一覧から選んでください。');return;}
+  if(editingIndex<0){alert('削除する文字をリストから選択してください。');return;}
   textItems.splice(editingIndex,1);editingIndex=-1;txt.value='';textOffset={x:0,y:0};
   confirmTextBtn.textContent='文字を追加・確定';renderTextList();draw();
 };
@@ -540,25 +563,9 @@ async function deleteKawaiiFont(){
 async function activateKawaiiFont(bytes,selectIt=false){
   const face=new FontFace('KawaiiTegaki',bytes);
   await face.load();document.fonts.add(face);
-  kawaiiFontOption.disabled=false;
-  kawaiiFontOption.textContent='kawaii手書き文字';
-  kawaiiFontStatus.textContent='登録済み：この端末でkawaii手書き文字を使用できます。';
-  if(selectIt){fontFamily.value=kawaiiFontOption.value;draw();}
+  if(kawaiiFontOption){kawaiiFontOption.disabled=false;kawaiiFontOption.textContent='kawaii手書き文字';}
+  if(selectIt&&kawaiiFontOption){fontFamily.value=kawaiiFontOption.value;draw();}
 }
-kawaiiFontFile.addEventListener('change',async e=>{
-  const file=e.target.files[0];if(!file)return;
-  try{
-    const bytes=await file.arrayBuffer();
-    await activateKawaiiFont(bytes,true);await saveKawaiiFont(bytes);
-  }catch(err){alert('フォントを登録できませんでした。KTEGAKI.ttfを選択してください。');}
-  e.target.value='';
-});
-removeKawaiiFontBtn.addEventListener('click',async()=>{
-  await deleteKawaiiFont();
-  if(fontFamily.value===kawaiiFontOption.value)fontFamily.selectedIndex=1;
-  kawaiiFontOption.disabled=true;kawaiiFontOption.textContent='kawaii手書き文字（未登録）';
-  kawaiiFontStatus.textContent='登録を解除しました。再利用するときはKTEGAKI.ttfを選択してください。';draw();
-});
 (async()=>{try{const bytes=await getKawaiiFont();if(bytes)await activateKawaiiFont(bytes);}catch(e){}})();
 document.querySelectorAll('.pos').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.pos').forEach(x=>x.classList.remove('selected'));
