@@ -180,6 +180,30 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
   .bottomToolbar .toolWithIcon{gap:4px}
 }
 
+/* 2026-09-05 text editor layout update */
+.textEditorGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
+.textListBox{margin-top:10px}
+.textListBox .small{margin-bottom:5px;color:var(--text);font-weight:700;font-size:14px}
+.textList{display:flex;flex-direction:column;gap:6px;margin-top:0;min-height:54px;padding:8px;border:2px solid rgba(140,119,98,.42);border-radius:13px;background:#fffdf8}
+.textList:empty::before{content:"確定した文字がここに表示されます";color:var(--sub);font-size:12px;align-self:center;margin:auto}
+.textList button{width:100%;min-height:40px;justify-content:flex-start;text-align:left;padding:6px 10px;font-size:14px;border-radius:9px;box-shadow:none}
+.previewPanel .dpad{margin:10px auto 0}
+.previewPanel .dpad button{font-size:22px}
+.previewSliders{margin-top:12px}
+.textSettingsTitle{margin:14px 0 8px}
+.textSettingsBox{width:100%;border:2px solid rgba(140,119,98,.42);border-radius:15px;padding:10px 12px;background:#fffaf1}
+.textSettingsBox .row{grid-template-columns:115px 1fr 44px;margin:8px 0}
+.textSettingsBox .rangeLabel{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.textSettingsBox .rangeLabel .rangeMinMax{font-size:12px;color:var(--sub);font-weight:600}
+.textSettingsBox b{text-align:right;min-width:32px}
+.hiddenPositionGrid{display:none!important}
+.textActions{margin-top:10px}
+@media(max-width:520px){
+  .textEditorGrid{grid-template-columns:1fr 1fr;gap:10px}
+  .textSettingsBox .row{grid-template-columns:100px 1fr 40px;gap:6px}
+  .textSettingsBox .rangeLabel{gap:5px}
+}
+
 </style>
 
 <link rel="manifest" href="manifest.json">
@@ -224,6 +248,11 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
         <div class="small" style="margin-bottom:5px">文字入力</div>
         <textarea id="txt" placeholder="例：500円 / 350ml / 3本セット"></textarea>
 
+        <div class="textListBox">
+          <div class="small">編集/削除したい文字</div>
+          <div id="textList" class="textList"></div>
+        </div>
+
         <div style="margin-top:10px">
           <div class="small">文字色</div>
           <input id="txtColor" type="color" value="#e60012">
@@ -234,58 +263,53 @@ button:active,.filebtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(
           <div class="small">縁取り色</div>
           <input id="strokeColor" type="color" value="#ffffff">
         </div>
+
+        <div class="previewSliders">
+          <div class="row"><label>文字フォント</label><select id="fontFamily">
+            <option id="kawaiiFontOption" value='"KawaiiTegaki",sans-serif' disabled>kawaii手書き文字（未登録）</option>
+            <option value='"Yomogi","Noto Sans JP",sans-serif'>よもぎ手書き（おすすめ）</option>
+            <option value='"Klee One","Noto Sans JP",sans-serif'>クレー手書き</option>
+            <option value='"Zen Kurenaido","Noto Sans JP",sans-serif'>やわらか細文字</option>
+            <option value='"M PLUS Rounded 1c","Noto Sans JP",sans-serif'>まる文字</option>
+            <option value='"Hachi Maru Pop","Noto Sans JP",cursive'>ふんわり手書き</option>
+            <option value='"Yusei Magic","Noto Sans JP",sans-serif'>マジック文字</option>
+            <option value='"Kosugi Maru","Noto Sans JP",sans-serif'>すっきり丸文字</option>
+            <option value='"Kaisei Decol","Noto Serif JP",serif'>デコ文字</option>
+            <option value='-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif'>標準文字</option>
+          </select><b></b></div>
+          <div class="two" style="margin:8px 0 4px">
+            <label class="filebtn" style="min-height:42px">kawaii手書き文字を登録<input id="kawaiiFontFile" type="file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf"></label>
+            <button id="removeKawaiiFontBtn" type="button" style="min-height:42px">登録を解除</button>
+          </div>
+          <div id="kawaiiFontStatus" class="small">公式配布の KTEGAKI.ttf を最初に1回選択してください。</div>
+        </div>
       </div>
 
       <div class="previewPanel">
         <div class="small" style="margin-bottom:5px">完成イメージ プレビュー</div>
         <canvas id="textPreview" width="384" height="512"></canvas>
+        <div class="dpad" aria-label="文字位置の微調整">
+          <button class="up" data-dx="0" data-dy="-5">▲</button>
+          <button class="left" data-dx="-5" data-dy="0">◀</button>
+          <button class="home" id="nudgeReset">中央</button>
+          <button class="right" data-dx="5" data-dy="0">▶</button>
+          <button class="down" data-dx="0" data-dy="5">▼</button>
+        </div>
       </div>
+    </div>
+
+    <div class="gridTitle textSettingsTitle">② 文字の設定</div>
+    <div class="textSettingsBox">
+      <div class="row"><label class="rangeLabel"><span>文字サイズ</span><span class="rangeMinMax">60 ～ 260</span></label><input id="fontSize" type="range" min="60" max="260" value="72"><b id="fontSizeV">72</b></div>
+      <div class="row"><label class="rangeLabel"><span>縁取り</span><span class="rangeMinMax">0 ～ 80</span></label><input id="strokeW" type="range" min="0" max="80" value="6"><b id="strokeWV">6</b></div>
     </div>
 
     <div class="textActions">
       <button id="confirmTextBtn" class="primary">文字を追加・確定</button>
       <button id="deleteTextBtn">選択文字を削除</button>
     </div>
-    <div id="textList" class="textList"></div>
 
-    <div class="previewSliders">
-      <div class="row"><label>文字フォント</label><select id="fontFamily">
-        <option id="kawaiiFontOption" value='"KawaiiTegaki",sans-serif' disabled>kawaii手書き文字（未登録）</option>
-        <option value='"Yomogi","Noto Sans JP",sans-serif'>よもぎ手書き（おすすめ）</option>
-        <option value='"Klee One","Noto Sans JP",sans-serif'>クレー手書き</option>
-        <option value='"Zen Kurenaido","Noto Sans JP",sans-serif'>やわらか細文字</option>
-        <option value='"M PLUS Rounded 1c","Noto Sans JP",sans-serif'>まる文字</option>
-        <option value='"Hachi Maru Pop","Noto Sans JP",cursive'>ふんわり手書き</option>
-        <option value='"Yusei Magic","Noto Sans JP",sans-serif'>マジック文字</option>
-        <option value='"Kosugi Maru","Noto Sans JP",sans-serif'>すっきり丸文字</option>
-        <option value='"Kaisei Decol","Noto Serif JP",serif'>デコ文字</option>
-        <option value='-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif'>標準文字</option>
-      </select><b></b></div>
-      <div class="two" style="margin:8px 0 4px">
-        <label class="filebtn" style="min-height:42px">kawaii手書き文字を登録<input id="kawaiiFontFile" type="file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf"></label>
-        <button id="removeKawaiiFontBtn" type="button" style="min-height:42px">登録を解除</button>
-      </div>
-      <div id="kawaiiFontStatus" class="small">公式配布の KTEGAKI.ttf を最初に1回選択してください。</div>
-      <div class="row"><label>文字サイズ</label><input id="fontSize" type="range" min="24" max="180" value="72"><b id="fontSizeV">72</b></div>
-      <div class="row"><label>縁取り</label><input id="strokeW" type="range" min="0" max="20" value="6"><b id="strokeWV">6</b></div>
-    </div>
-
-    <div class="gridTitle">② 文字の配置（25マス）</div>
-    <div class="posgrid" id="posgrid"><button class="pos" data-p="0" aria-label="文字位置 1"></button><button class="pos" data-p="1" aria-label="文字位置 2"></button><button class="pos" data-p="2" aria-label="文字位置 3"></button><button class="pos" data-p="3" aria-label="文字位置 4"></button><button class="pos" data-p="4" aria-label="文字位置 5"></button><button class="pos" data-p="5" aria-label="文字位置 6"></button><button class="pos" data-p="6" aria-label="文字位置 7"></button><button class="pos" data-p="7" aria-label="文字位置 8"></button><button class="pos" data-p="8" aria-label="文字位置 9"></button><button class="pos" data-p="9" aria-label="文字位置 10"></button><button class="pos" data-p="10" aria-label="文字位置 11"></button><button class="pos" data-p="11" aria-label="文字位置 12"></button><button class="pos selected" data-p="12" aria-label="文字位置 13"></button><button class="pos" data-p="13" aria-label="文字位置 14"></button><button class="pos" data-p="14" aria-label="文字位置 15"></button><button class="pos" data-p="15" aria-label="文字位置 16"></button><button class="pos" data-p="16" aria-label="文字位置 17"></button><button class="pos" data-p="17" aria-label="文字位置 18"></button><button class="pos" data-p="18" aria-label="文字位置 19"></button><button class="pos" data-p="19" aria-label="文字位置 20"></button><button class="pos" data-p="20" aria-label="文字位置 21"></button><button class="pos" data-p="21" aria-label="文字位置 22"></button><button class="pos" data-p="22" aria-label="文字位置 23"></button><button class="pos" data-p="23" aria-label="文字位置 24"></button><button class="pos" data-p="24" aria-label="文字位置 25"></button></div>
-    <div class="nudgeWrap">
-      <div>
-        <div class="gridTitle">③ 位置を微調整</div>
-        <div class="note">矢印を1回押すと5px移動します。「中央」で選んだ25マスの基準位置に戻ります。</div>
-      </div>
-      <div class="dpad" aria-label="文字位置の微調整">
-        <button class="up" data-dx="0" data-dy="-5">▲</button>
-        <button class="left" data-dx="-5" data-dy="0">◀</button>
-        <button class="home" id="nudgeReset">中央</button>
-        <button class="right" data-dx="5" data-dy="0">▶</button>
-        <button class="down" data-dx="0" data-dy="5">▼</button>
-      </div>
-    </div>
-    <p class="note">右上のプレビューには、実際の商品画像・フレーム・追記文字を縮小して表示します。文字サイズや縁取り、25マスの位置を変えるとリアルタイムで反映されます。</p>
+    <div class="posgrid hiddenPositionGrid" id="posgrid"><button class="pos" data-p="0" aria-label="文字位置 1"></button><button class="pos" data-p="1" aria-label="文字位置 2"></button><button class="pos" data-p="2" aria-label="文字位置 3"></button><button class="pos" data-p="3" aria-label="文字位置 4"></button><button class="pos" data-p="4" aria-label="文字位置 5"></button><button class="pos" data-p="5" aria-label="文字位置 6"></button><button class="pos" data-p="6" aria-label="文字位置 7"></button><button class="pos" data-p="7" aria-label="文字位置 8"></button><button class="pos" data-p="8" aria-label="文字位置 9"></button><button class="pos" data-p="9" aria-label="文字位置 10"></button><button class="pos" data-p="10" aria-label="文字位置 11"></button><button class="pos" data-p="11" aria-label="文字位置 12"></button><button class="pos selected" data-p="12" aria-label="文字位置 13"></button><button class="pos" data-p="13" aria-label="文字位置 14"></button><button class="pos" data-p="14" aria-label="文字位置 15"></button><button class="pos" data-p="15" aria-label="文字位置 16"></button><button class="pos" data-p="16" aria-label="文字位置 17"></button><button class="pos" data-p="17" aria-label="文字位置 18"></button><button class="pos" data-p="18" aria-label="文字位置 19"></button><button class="pos" data-p="19" aria-label="文字位置 20"></button><button class="pos" data-p="20" aria-label="文字位置 21"></button><button class="pos" data-p="21" aria-label="文字位置 22"></button><button class="pos" data-p="22" aria-label="文字位置 23"></button><button class="pos" data-p="23" aria-label="文字位置 24"></button><button class="pos" data-p="24" aria-label="文字位置 25"></button></div>
   </div>
 </div>
 
@@ -427,9 +451,11 @@ function renderTextList(){
   textList.innerHTML='';
   textItems.forEach((item,i)=>{
     const b=document.createElement('button');
-    b.textContent=(i===editingIndex?'編集中：':'')+(item.text.replace(/\n/g,' / ').slice(0,18)||('文字'+(i+1)));
+    b.type='button';
+    b.textContent=(i===editingIndex?'編集中：':'')+(item.text.replace(/\n/g,' / ')||('文字'+(i+1)));
     if(i===editingIndex)b.classList.add('active');
-    b.onclick=()=>editText(i);textList.appendChild(b);
+    b.onclick=()=>editText(i);
+    textList.appendChild(b);
   });
 }
 function editText(i){
@@ -596,51 +622,39 @@ function endPointer(e){pointers.delete(e.pointerId);dragging=pointers.size===1; 
 wrap.addEventListener('pointerup',endPointer);wrap.addEventListener('pointercancel',endPointer);
 
 saveBtn.onclick=()=>{
+  // Keep the save action inside the user's tap event so Android/Chrome
+  // treats every press as an individual user-requested download.
   draw();
-
-  const originalHTML = saveBtn.innerHTML;
-  saveBtn.disabled = true;
-  saveBtn.querySelector('span').textContent = '保存中…';
-
-  cv.toBlob(blob=>{
-    if(!blob){
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = originalHTML;
-      alert('PNGの作成に失敗しました。もう一度お試しください。');
-      return;
-    }
-
+  const originalHTML=saveBtn.innerHTML;
+  try{
+    const dataUrl=cv.toDataURL('image/png');
     const a=document.createElement('a');
-    const objectUrl=URL.createObjectURL(blob);
-    a.href=objectUrl;
+    a.href=dataUrl;
     a.download='yahoo_frame_'+new Date().toISOString().replace(/[:.]/g,'-')+'.png';
     document.body.appendChild(a);
     a.click();
     a.remove();
 
-    // Visual feedback
     const toast=document.getElementById('saveToast');
     const saveRandomImage=document.getElementById('saveRandomImage');
     const pick=SAVE_RANDOM_IMAGES[Math.floor(Math.random()*SAVE_RANDOM_IMAGES.length)];
     saveRandomImage.src=pick;
-    saveBtn.disabled=false;
-    saveBtn.textContent='✓ 保存しました';
     saveBtn.classList.add('saved');
+    saveBtn.querySelector('span').textContent='✓ 保存しました';
     toast.classList.add('show');
-
-    if(navigator.vibrate){
-      try{ navigator.vibrate(70); }catch(e){}
-    }
-
+    if(navigator.vibrate){try{navigator.vibrate(70);}catch(e){}}
     setTimeout(()=>{
       toast.classList.remove('show');
       saveBtn.classList.remove('saved');
       saveBtn.innerHTML=originalHTML;
-    },2000);
-
-    setTimeout(()=>URL.revokeObjectURL(objectUrl),2500);
-  },'image/png');
+    },1200);
+  }catch(err){
+    saveBtn.classList.remove('saved');
+    saveBtn.innerHTML=originalHTML;
+    alert('PNGの保存に失敗しました。もう一度お試しください。');
+  }
 };
+
 draw();
 drawTextPreview();
 
